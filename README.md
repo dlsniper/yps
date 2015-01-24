@@ -19,7 +19,7 @@ In priority order:
     - [ ] Dropbox (maybe? check if they have an API)
 - [ ] Implement an interface to receive a single video ID
 - [ ] Implement an interface to receive the playlist ID
-- [ ] Process playlist request and divide items into tasks (using a MQ) to save file independently
+- [ ] Process playlist request and divide items into tasks (using a MQ) to process files independently
 - [ ] Make a pretty interface
 
 Technologies used
