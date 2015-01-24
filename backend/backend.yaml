@@ -1,6 +1,6 @@
 application: zeta-rush-835
 module: backend
-version: 1
+version: 2
 runtime: go
 api_version: go1
 instance_class: F1
@@ -11,6 +11,6 @@ automatic_scaling:
   max_pending_latency: 1s
   max_concurrent_requests: 500
 handlers:
-  - url: /_backend/.*
+  - url: /.*
     script: _go_app
     login: admin

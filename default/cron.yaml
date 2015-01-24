@@ -1,0 +1,5 @@
+cron:
+- description: process user input
+  url: /processUserInput
+  schedule: every 2 minutes
+  target: backend
