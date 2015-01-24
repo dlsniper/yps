@@ -1,0 +1,11 @@
+application: dlsniper-yps
+
+dispatch:
+  - url: "*/favicon.ico"
+    module: default
+  - url: "dlsniper-yps.appspot.com/"
+    module: default
+  - url: "*/backend/*"
+    module: backend
+  - url: "*/process/*"
+    module: processing
