@@ -8,7 +8,6 @@ A good example for this would be: [Computer Science 61B - Fall 2006](https://www
 
 TODO
 ---
-
 In priority order:
 
 - [ ] Implement a way to get the video in mp4 format from YouTube
@@ -26,7 +25,6 @@ In priority order:
 
 Technologies used
 ---
-
 ***TODO*** Check if this is what we need or we need more
 
 - [ ] AppEngine
@@ -38,6 +36,10 @@ Technologies used
     - [ ] Drive API
     - [ ] Drive SDK (check difference between the two)
     - [ ] YouTube Data API v3
+
+Resources
+---
+This project uses resurces from [initializr.com](http://www.initializr.com/)
 
 Legal stuff
 ---
