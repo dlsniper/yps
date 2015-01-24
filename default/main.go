@@ -10,6 +10,8 @@ import (
 	"appengine"
 	"appengine/taskqueue"
 
+	"github.com/gophergala/yps/queue/aetq"
+
 	"github.com/gorilla/mux"
 )
 
@@ -49,11 +51,12 @@ func rootHandler(w http.ResponseWriter, r *http.Request) {
 
 func addPlaylistHandler(w http.ResponseWriter, r *http.Request) {
 	c := appengine.NewContext(r)
+	queue := aetq.NewQueue(c, "userInput", 60)
 
-	task := &taskqueue.Task{
+	msg := aetq.NewMessage(&taskqueue.Task{
 		Payload: []byte("hello world"),
 		Method:  "PULL",
-	}
+	})
 
-	_, _ = taskqueue.Add(c, task, "userInput")
+	_ = queue.Add(&msg)
 }

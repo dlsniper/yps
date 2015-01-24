@@ -6,7 +6,8 @@ import (
 	"net/http"
 
 	"appengine"
-	"appengine/taskqueue"
+
+	"github.com/gophergala/yps/queue/aetq"
 
 	"github.com/gorilla/mux"
 )
@@ -19,8 +20,9 @@ func init() {
 
 func queueHandler(w http.ResponseWriter, r *http.Request) {
 	c := appengine.NewContext(r)
+	queue := aetq.NewQueue(c, "userInput", 60)
 
-	tasks, err := taskqueue.Lease(c, 10, "userInput", 60)
+	tasks, err := queue.Fetch(60)
 
 	if err != nil {
 		log.Printf("[error] Task failed: %#v", err)
@@ -28,8 +30,8 @@ func queueHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	for _, task := range tasks {
-		log.Printf("Got task: %#v", task)
-		taskqueue.Delete(c, task, "userInput")
+		log.Printf("Got task: %#q", (*task).Original())
+		queue.Delete(task)
 	}
 
 	fmt.Fprint(w, "it worked")
