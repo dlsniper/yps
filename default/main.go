@@ -2,12 +2,15 @@ package main
 
 import (
 	"fmt"
+	"io/ioutil"
 	"net/http"
+	"path"
+	"runtime"
+
+	"appengine"
+	"appengine/taskqueue"
 
 	"github.com/gorilla/mux"
-	"runtime"
-	"path"
-	"io/ioutil"
 )
 
 var (
@@ -18,7 +21,8 @@ func init() {
 	loadTemplates()
 
 	r := mux.NewRouter()
-	r.HandleFunc("/", handler).Methods("GET")
+	r.HandleFunc("/", rootHandler).Methods("GET")
+	r.HandleFunc("/addPlaylist", addPlaylistHandler).Methods("GET")
 	http.Handle("/", r)
 }
 
@@ -39,6 +43,17 @@ func loadTemplates() (err error) {
 	return
 }
 
-func handler(w http.ResponseWriter, r *http.Request) {
+func rootHandler(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprint(w, indexTemplate)
+}
+
+func addPlaylistHandler(w http.ResponseWriter, r *http.Request) {
+	c := appengine.NewContext(r)
+
+	task := &taskqueue.Task{
+		Payload: []byte("hello world"),
+		Method:  "PULL",
+	}
+
+	_, _ = taskqueue.Add(c, task, "userInput")
 }
