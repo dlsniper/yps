@@ -35,3 +35,9 @@ Technologies used
 Legal stuff
 ---
 This should be a way to save material for later listening, while on the move. Please respect the copyright of the authors of the respective videos.
+
+License
+---
+This project is created under MIT license.
+
+For more information, please see the [LICENSE](https://github.com/gophergala/yps/blob/master/LICENSE.md) file.
