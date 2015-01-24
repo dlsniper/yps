@@ -1,11 +1,11 @@
-application: dlsniper-yps
+application: zeta-rush-835
 
 dispatch:
   - url: "*/favicon.ico"
     module: default
-  - url: "dlsniper-yps.appspot.com/"
+  - url: "zeta-rush-835.appspot.com/"
     module: default
-  - url: "*/backend/*"
+  - url: "*/_backend/*"
     module: backend
-  - url: "*/process/*"
+  - url: "*/_process/*"
     module: processing
