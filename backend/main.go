@@ -29,7 +29,7 @@ func queueHandler(w http.ResponseWriter, r *http.Request) {
 
 	for i := 0; i < 12; i++ {
 		start := time.Now()
-		go core.ProcessUserInput(&mq, processChan)
+		go core.ProcessUserInputTasks(&mq, processChan)
 
 		select {
 		case <-time.After(time.Duration(5) * time.Second):

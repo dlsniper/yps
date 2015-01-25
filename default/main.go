@@ -20,7 +20,9 @@ import (
 )
 
 var (
-	indexTemplate string
+	indexTemplate             string
+	errInvalidMessageReceived = fmt.Errorf("invalid message received")
+	errInternalServerError    = fmt.Errorf("internal server error")
 )
 
 func init() {
@@ -56,28 +58,42 @@ func rootHandler(w http.ResponseWriter, r *http.Request) {
 func addToQueue(w http.ResponseWriter, r *http.Request) {
 	yt := youtube.NewYoutube()
 
-	if r.ParseForm() != nil {
-		ypshu.WriteResponse(fmt.Errorf("invalid message received"), http.StatusBadRequest, r, w)
+	if err := r.ParseForm(); err != nil {
+		if !appengine.IsDevAppServer() {
+			err = errInvalidMessageReceived
+		}
+		ypshu.WriteResponse(err, http.StatusBadRequest, r, w)
 		return
 	}
 
 	url := r.PostForm.Get("url")
 
 	if !yt.IsValidURL(url) {
-		ypshu.WriteResponse(fmt.Errorf("invalid message received"), http.StatusBadRequest, r, w)
+		ypshu.WriteResponse(errInvalidMessageReceived, http.StatusBadRequest, r, w)
+		return
+	}
+
+	payload, err := core.ProcessUserInput(url)
+
+	if err != nil {
+		if !appengine.IsDevAppServer() {
+			err = errInvalidMessageReceived
+		}
+
+		ypshu.WriteResponse(err, http.StatusInternalServerError, r, w)
 		return
 	}
 
 	msg := aetq.NewMessage(&taskqueue.Task{
-		Payload: []byte(url),
+		Payload: payload,
 		Method:  "PULL",
 	})
 
 	c := appengine.NewContext(r)
 	mq := aetq.NewQueue(c, core.UserInputQueue, 60)
 	if err := mq.Add(&msg); err != nil {
-		if appengine.IsDevAppServer() {
-			err = fmt.Errorf("%q", err)
+		if !appengine.IsDevAppServer() {
+			err = errInternalServerError
 		}
 
 		ypshu.WriteResponse(err, http.StatusInternalServerError, r, w)

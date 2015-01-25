@@ -2,16 +2,41 @@
 package core
 
 import (
+	"encoding/json"
 	"log"
 	"sync"
 
 	"github.com/gophergala/yps/queue"
 )
 
+type (
+	userInput struct {
+		URL string `json:"url"`
+	}
+)
+
 const (
 	// UserInputQueue represents the name of the user input queue
 	UserInputQueue = `userInput`
 )
+
+func encodeUserInputTask(url string) ([]byte, error) {
+	msg := &userInput{
+		URL: url,
+	}
+
+	return json.Marshal(msg)
+}
+
+func decodeUserInputTask(msg string) (m userInput, err error) {
+	err = json.Unmarshal([]byte(msg), &m)
+	return
+}
+
+// ProcessUserInput transforms the input taken fro the user and returns it in the format needed
+func ProcessUserInput(url string) ([]byte, error) {
+	return encodeUserInputTask(url)
+}
 
 func processMessage(task *queue.Message, mq *queue.Queue, wg *sync.WaitGroup) (err error) {
 	defer wg.Done()
@@ -23,8 +48,8 @@ func processMessage(task *queue.Message, mq *queue.Queue, wg *sync.WaitGroup) (e
 	return
 }
 
-// ProcessUserInput processes all the messages from the user input queue
-func ProcessUserInput(mq *queue.Queue, resp chan<- error) {
+// ProcessUserInputTasks processes all the messages from the user input queue
+func ProcessUserInputTasks(mq *queue.Queue, resp chan<- error) {
 	tasks, err := (*mq).Fetch(10)
 
 	if err != nil {
