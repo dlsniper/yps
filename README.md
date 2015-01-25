@@ -6,6 +6,10 @@ yps helps you get your Youtube playlist saved as mp3s so you can listen your fav
 A good example for this would be: [Computer Science 61B - Fall 2006](https://www.youtube.com/playlist?list=PL4BBB74C7D2A1049C) or
 [Google NYC Tech Talks](https://www.youtube.com/playlist?list=PLAD8A7B6D66DDD297)
 
+[![GoDoc](https://godoc.org/github.com/gophergala/yps?status.svg)](https://godoc.org/github.com/gophergala/yps)
+
+You can test it out [here](http://zeta-rush-835.appspot.com/)
+
 TODO
 ---
 In priority order:
@@ -30,13 +34,14 @@ Technologies used
 
 - [x] AppEngine
     - [x] Task Queue
-    - [ ] Managed VM (for the conversion part)
+    - [ ] Managed VM (for the conversion part. maybe we can run a CLI to do it on the user machine?)
 - [x] Go
     - [x] GorrilaWebToolkit - [http://www.gorillatoolkit.org/](http://www.gorillatoolkit.org/)
 - Google APIs
-    - [ ] Drive API
-    - [ ] Drive SDK (check difference between the two)
-    - [ ] YouTube Data API v3
+    - [ ] Drive API (?)
+    - [ ] Drive SDK (?, check difference between the two)
+    - [ ] YouTube Data API v3 (to fetcht the playlists and compute the videos needed)
+- FFmpeg (conversion stuff)
 
 Resources
 ---
