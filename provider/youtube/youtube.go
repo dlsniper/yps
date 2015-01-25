@@ -34,6 +34,40 @@ func (y *yt) IsValidURL(u string) bool {
 	return false
 }
 
+func (y *yt) IsVideo(u string) bool {
+	ur, err := url.Parse(u)
+	if err != nil {
+		return false
+	}
+
+	if ur.Scheme != "https" || ur.Host != "www.youtube.com" {
+		return false
+	}
+
+	if ur.Path == "/watch" {
+		return ur.Query().Get("v") != ""
+	}
+
+	return false
+}
+
+func (y *yt) IsPlaylist(u string) bool {
+	ur, err := url.Parse(u)
+	if err != nil {
+		return false
+	}
+
+	if ur.Scheme != "https" || ur.Host != "www.youtube.com" {
+		return false
+	}
+
+	if ur.Path == "/playlist" {
+		return ur.Query().Get("list") != ""
+	}
+
+	return false
+}
+
 func (y *yt) URLToFile(url string, downloadFunc provider.DownloadFunc) (string, error) {
 	_, _ = downloadFunc(url)
 

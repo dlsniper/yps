@@ -33,15 +33,44 @@ func (m *msg) String() string {
 }
 
 // NewMessage creates a wrapper message of queue.Message interface over an taskqueue.Task
-func NewMessage(message interface{}) queue.Message {
+func NewMessage(payload interface{}) queue.Message {
+	var ms *taskqueue.Task
+	if _, ok := payload.(*taskqueue.Task); ok {
+		ms = payload.(*taskqueue.Task)
+	} else {
+		switch payload.(type) {
+		case string:
+			{
+				ms = &taskqueue.Task{
+					Payload: []byte(payload.(string)),
+					Method:  "PULL",
+				}
+			}
+
+		case []byte:
+			{
+				ms = &taskqueue.Task{
+					Payload: payload.([]byte),
+					Method:  "PULL",
+				}
+			}
+
+		default:
+			{
+				return nil
+			}
+		}
+
+	}
+
 	return &msg{
-		original: message.(*taskqueue.Task),
+		original: ms,
 	}
 }
 
 func (q *mq) Add(message *queue.Message) (err error) {
 	m := (*message).Original().(*taskqueue.Task)
-	_, err = taskqueue.Add(q.ctx, m, "userInput")
+	_, err = taskqueue.Add(q.ctx, m, q.name)
 	return
 }
 

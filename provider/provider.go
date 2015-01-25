@@ -8,6 +8,8 @@ type (
 	// Provider interface determines the common functions across providers
 	Provider interface {
 		IsValidURL(string) bool
+		IsVideo(string) bool
+		IsPlaylist(string) bool
 		URLToFile(string, DownloadFunc) (string, error)
 	}
 )

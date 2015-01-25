@@ -23,13 +23,15 @@ func init() {
 
 func queueHandler(w http.ResponseWriter, r *http.Request) {
 	c := appengine.NewContext(r)
-	mq := aetq.NewQueue(c, core.UserInputQueue, 5)
+	msgMq := aetq.NewQueue(c, core.UserInputQueue, 5)
+	playlistMq := aetq.NewQueue(c, core.PlaylistQueue, 5)
+	videoMq := aetq.NewQueue(c, core.VideoQueue, 5)
 
 	processChan := make(chan error, 1)
 
 	for i := 0; i < 12; i++ {
 		start := time.Now()
-		go core.ProcessUserInputTasks(&mq, processChan)
+		go core.ProcessUserInputTasks(&msgMq, &playlistMq, &videoMq, processChan)
 
 		select {
 		case <-time.After(time.Duration(5) * time.Second):

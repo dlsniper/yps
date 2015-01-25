@@ -3,10 +3,13 @@ package core
 
 import (
 	"encoding/json"
+	"fmt"
 	"log"
 	"sync"
 
+	"github.com/gophergala/yps/provider/youtube"
 	"github.com/gophergala/yps/queue"
+	"github.com/gophergala/yps/queue/aetq"
 )
 
 type (
@@ -16,8 +19,17 @@ type (
 )
 
 const (
-	// UserInputQueue represents the name of the user input queue
+	// UserInputQueue holds the name of the user input queue
 	UserInputQueue = `userInput`
+	// PlaylistQueue holds the name of the playlists queue
+	PlaylistQueue = `playlist`
+	// VideoQueue holds the name of the video queue
+	VideoQueue = `video`
+)
+
+var (
+	errInvalidYoutubeURL      = fmt.Errorf("invalid youtube url received")
+	errTaskNotVideoOrPlaylist = fmt.Errorf("task was not a video or a playlist")
 )
 
 func encodeUserInputTask(url string) ([]byte, error) {
@@ -38,19 +50,44 @@ func ProcessUserInput(url string) ([]byte, error) {
 	return encodeUserInputTask(url)
 }
 
-func processMessage(task *queue.Message, mq *queue.Queue, wg *sync.WaitGroup) (err error) {
-	defer wg.Done()
+func processMessage(task *queue.Message, msgMq, playlistMq, videoMq *queue.Queue, wg *sync.WaitGroup) (err error) {
+	defer func() {
+		er := (*msgMq).Delete(task)
+		if err == nil {
+			err = er
+		}
+		wg.Done()
+	}()
 
-	// TODO check if message is for a playlist or video and send to the right mq
 	log.Printf("Got task: %#q", (*task).Original())
-	err = (*mq).Delete(task)
+
+	var msg userInput
+	msg, err = decodeUserInputTask((*task).String())
+	if err != nil {
+		return
+	}
+
+	yt := youtube.NewYoutube()
+	if !yt.IsValidURL(msg.URL) {
+		return errInvalidYoutubeURL
+	}
+
+	message := aetq.NewMessage(msg.URL)
+
+	if yt.IsPlaylist(msg.URL) {
+		(*playlistMq).Add(&message)
+	} else if yt.IsVideo(msg.URL) {
+		(*videoMq).Add(&message)
+	} else {
+		err = errTaskNotVideoOrPlaylist
+	}
 
 	return
 }
 
 // ProcessUserInputTasks processes all the messages from the user input queue
-func ProcessUserInputTasks(mq *queue.Queue, resp chan<- error) {
-	tasks, err := (*mq).Fetch(10)
+func ProcessUserInputTasks(msgMq, playlistMq, videoMq *queue.Queue, resp chan<- error) {
+	tasks, err := (*msgMq).Fetch(10)
 
 	if err != nil {
 		log.Printf("[error] Task failed: %#v", err)
@@ -62,7 +99,7 @@ func ProcessUserInputTasks(mq *queue.Queue, resp chan<- error) {
 	for _, task := range tasks {
 		wg.Add(1)
 		go func(task queue.Message) {
-			if err := processMessage(&task, mq, wg); err != nil {
+			if err := processMessage(&task, msgMq, playlistMq, videoMq, wg); err != nil {
 				log.Printf("[error] task failed to be processed task: %#v message: %q", task, err)
 			}
 		}(*task)

@@ -9,7 +9,6 @@ import (
 	"runtime"
 
 	"appengine"
-	"appengine/taskqueue"
 
 	"github.com/gophergala/yps/core"
 	ypshu "github.com/gophergala/yps/core/httputil"
@@ -20,9 +19,11 @@ import (
 )
 
 var (
-	indexTemplate             string
-	errInvalidMessageReceived = fmt.Errorf("invalid message received")
-	errInternalServerError    = fmt.Errorf("internal server error")
+	templatesLoaded                 bool
+	indexTemplate                   string
+	errInvalidMessageReceived       = fmt.Errorf("invalid message received")
+	errInternalServerError          = fmt.Errorf("internal server error")
+	errCannotConvertMessageForQueue = fmt.Errorf("cannot convert message to be processed by the queue")
 )
 
 func init() {
@@ -35,6 +36,10 @@ func init() {
 }
 
 func loadTemplates() (err error) {
+	if templatesLoaded {
+		return nil
+	}
+
 	_, currentFilename, _, ok := runtime.Caller(0)
 	if !ok {
 		return fmt.Errorf("Could not retrieve the caller for loading templates")
@@ -48,6 +53,8 @@ func loadTemplates() (err error) {
 	}
 	indexTemplate = string(template)
 
+	templatesLoaded = true
+
 	return
 }
 
@@ -56,8 +63,6 @@ func rootHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func addToQueue(w http.ResponseWriter, r *http.Request) {
-	yt := youtube.NewYoutube()
-
 	if err := r.ParseForm(); err != nil {
 		if !appengine.IsDevAppServer() {
 			err = errInvalidMessageReceived
@@ -68,6 +73,7 @@ func addToQueue(w http.ResponseWriter, r *http.Request) {
 
 	url := r.PostForm.Get("url")
 
+	yt := youtube.NewYoutube()
 	if !yt.IsValidURL(url) {
 		ypshu.WriteResponse(errInvalidMessageReceived, http.StatusBadRequest, r, w)
 		return
@@ -84,10 +90,11 @@ func addToQueue(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	msg := aetq.NewMessage(&taskqueue.Task{
-		Payload: payload,
-		Method:  "PULL",
-	})
+	msg := aetq.NewMessage(payload)
+	if msg == nil {
+		ypshu.WriteResponse(errCannotConvertMessageForQueue, http.StatusInternalServerError, r, w)
+		return
+	}
 
 	c := appengine.NewContext(r)
 	mq := aetq.NewQueue(c, core.UserInputQueue, 60)
