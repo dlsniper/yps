@@ -28,8 +28,9 @@ const (
 )
 
 var (
-	errInvalidYoutubeURL      = fmt.Errorf("invalid youtube url received")
-	errTaskNotVideoOrPlaylist = fmt.Errorf("task was not a video or a playlist")
+	errInvalidYoutubeURL              = fmt.Errorf("invalid youtube url received")
+	errTaskNotVideoOrPlaylist         = fmt.Errorf("task was not a video or a playlist")
+	errTaskNotPlaylistInPlaylistQueue = fmt.Errorf("task in playlist queue was not a playlist")
 )
 
 func encodeUserInputTask(url string) ([]byte, error) {
@@ -50,7 +51,7 @@ func ProcessUserInput(url string) ([]byte, error) {
 	return encodeUserInputTask(url)
 }
 
-func processMessage(task *queue.Message, msgMq, playlistMq, videoMq *queue.Queue, wg *sync.WaitGroup) (err error) {
+func processUserMessage(task *queue.Message, msgMq, playlistMq, videoMq *queue.Queue, wg *sync.WaitGroup) (err error) {
 	defer func() {
 		er := (*msgMq).Delete(task)
 		if err == nil {
@@ -99,7 +100,61 @@ func ProcessUserInputTasks(msgMq, playlistMq, videoMq *queue.Queue, resp chan<- 
 	for _, task := range tasks {
 		wg.Add(1)
 		go func(task queue.Message) {
-			if err := processMessage(&task, msgMq, playlistMq, videoMq, wg); err != nil {
+			if err := processUserMessage(&task, msgMq, playlistMq, videoMq, wg); err != nil {
+				log.Printf("[error] task failed to be processed task: %#v message: %q", task, err)
+			}
+		}(*task)
+
+	}
+	wg.Wait()
+
+	resp <- nil
+}
+
+func processPlaylistMessage(task *queue.Message, playlistMq, videoMq *queue.Queue, wg *sync.WaitGroup) (err error) {
+	defer func() {
+		er := (*playlistMq).Delete(task)
+		if err == nil {
+			err = er
+		}
+		wg.Done()
+	}()
+
+	log.Printf("Got task: %#q", (*task).Original())
+
+	var msg userInput
+	msg, err = decodeUserInputTask((*task).String())
+	if err != nil {
+		return
+	}
+
+	yt := youtube.NewYoutube()
+	if !yt.IsValidURL(msg.URL) {
+		return errInvalidYoutubeURL
+	}
+
+	if !yt.IsPlaylist(msg.URL) {
+		return errTaskNotPlaylistInPlaylistQueue
+	}
+
+	return
+}
+
+// ProcessPlaylistTasks processes all the messages from the playlist queue to convert them into video tasks
+func ProcessPlaylistTasks(playlistMq, videoMq *queue.Queue, resp chan<- error) {
+	tasks, err := (*playlistMq).Fetch(5)
+
+	if err != nil {
+		log.Printf("[error] Task failed: %#v", err)
+		resp <- err
+		return
+	}
+
+	wg := &sync.WaitGroup{}
+	for _, task := range tasks {
+		wg.Add(1)
+		go func(task queue.Message) {
+			if err := processPlaylistMessage(&task, playlistMq, videoMq, wg); err != nil {
 				log.Printf("[error] task failed to be processed task: %#v message: %q", task, err)
 			}
 		}(*task)
