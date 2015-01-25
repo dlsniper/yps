@@ -1,4 +1,5 @@
-package main
+// Package backend implements the main for the backend requests
+package backend
 
 import (
 	"fmt"

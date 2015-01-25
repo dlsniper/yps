@@ -1,4 +1,5 @@
-package main
+// Package processing holds the logic for processing the requests
+package processing
 
 import (
 	"fmt"
