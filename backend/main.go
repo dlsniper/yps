@@ -5,9 +5,11 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"time"
 
 	"appengine"
 
+	"github.com/gophergala/yps/core"
 	"github.com/gophergala/yps/queue/aetq"
 
 	"github.com/gorilla/mux"
@@ -21,19 +23,24 @@ func init() {
 
 func queueHandler(w http.ResponseWriter, r *http.Request) {
 	c := appengine.NewContext(r)
-	queue := aetq.NewQueue(c, "userInput", 60)
+	mq := aetq.NewQueue(c, core.UserInputQueue, 60)
 
-	tasks, err := queue.Fetch(60)
+	processChan := make(chan error, 1)
+	go core.ProcessUserInput(&mq, processChan)
 
-	if err != nil {
-		log.Printf("[error] Task failed: %#v", err)
-		return
+	select {
+	case <-time.After(time.Duration(5) * time.Second):
+		{
+			log.Printf("[info] processing tasks took too long")
+		}
+	case resp := <-processChan:
+		{
+			if resp != nil {
+				log.Printf("[error] error while processing user input message: %q", resp)
+			}
+		}
 	}
 
-	for _, task := range tasks {
-		log.Printf("Got task: %#q", (*task).Original())
-		queue.Delete(task)
-	}
-
-	fmt.Fprint(w, "it worked")
+	w.WriteHeader(http.StatusOK)
+	fmt.Fprint(w, "task finished")
 }

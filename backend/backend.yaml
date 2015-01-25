@@ -1,6 +1,6 @@
 application: zeta-rush-835
 module: backend
-version: 3
+version: 4
 runtime: go
 api_version: go1
 instance_class: F1

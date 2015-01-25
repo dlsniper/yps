@@ -11,6 +11,8 @@ import (
 	"appengine"
 	"appengine/taskqueue"
 
+	"github.com/gophergala/yps/core"
+	ypshu "github.com/gophergala/yps/core/httputil"
 	"github.com/gophergala/yps/provider/youtube"
 	"github.com/gophergala/yps/queue/aetq"
 
@@ -55,14 +57,14 @@ func addToQueue(w http.ResponseWriter, r *http.Request) {
 	yt := youtube.NewYoutube()
 
 	if r.ParseForm() != nil {
-		writeResponse(fmt.Errorf("invalid message received"), http.StatusBadRequest, r, w)
+		ypshu.WriteResponse(fmt.Errorf("invalid message received"), http.StatusBadRequest, r, w)
 		return
 	}
 
 	url := r.PostForm.Get("url")
 
 	if !yt.IsValidURL(url) {
-		writeResponse(fmt.Errorf("invalid message received"), http.StatusBadRequest, r, w)
+		ypshu.WriteResponse(fmt.Errorf("invalid message received"), http.StatusBadRequest, r, w)
 		return
 	}
 
@@ -72,23 +74,15 @@ func addToQueue(w http.ResponseWriter, r *http.Request) {
 	})
 
 	c := appengine.NewContext(r)
-	queue := aetq.NewQueue(c, "userInput", 60)
-	if err := queue.Add(&msg); err != nil {
+	mq := aetq.NewQueue(c, core.UserInputQueue, 60)
+	if err := mq.Add(&msg); err != nil {
 		if appengine.IsDevAppServer() {
 			err = fmt.Errorf("%q", err)
 		}
-		writeResponse(err, http.StatusInternalServerError, r, w)
+
+		ypshu.WriteResponse(err, http.StatusInternalServerError, r, w)
 		return
 	}
 
-	writeResponse(fmt.Sprintf("%q", "created"), http.StatusCreated, r, w)
-}
-
-func writeResponse(response interface{}, code int, r *http.Request, w http.ResponseWriter) {
-	w.WriteHeader(code)
-	w.Header().Set("Cache-Control", "no-cache, no-store, must-revalidate")
-	w.Header().Set("Pragma", "no-cache")
-	w.Header().Set("Expires", "0")
-	w.Header().Set("Content-Type", "text/plain; charset=UTF-8")
-	fmt.Fprintf(w, "%d %q", code, response)
+	ypshu.WriteResponse(fmt.Sprintf("%q", "created"), http.StatusCreated, r, w)
 }

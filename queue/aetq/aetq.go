@@ -45,7 +45,7 @@ func (q *mq) Add(message *queue.Message) (err error) {
 	return
 }
 
-func (q *mq) MultipleFetch(count int) (messages []*queue.Message, err error) {
+func (q *mq) Fetch(count int) (messages []*queue.Message, err error) {
 	var msgs []*taskqueue.Task
 
 	if msgs, err = taskqueue.Lease(q.ctx, count, q.name, q.lease); err != nil {
@@ -58,10 +58,6 @@ func (q *mq) MultipleFetch(count int) (messages []*queue.Message, err error) {
 	}
 
 	return
-}
-
-func (q *mq) Fetch(count int) (messages []*queue.Message, err error) {
-	return q.MultipleFetch(count)
 }
 
 func (q *mq) Confirm(message *queue.Message) error {
