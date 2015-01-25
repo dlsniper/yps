@@ -10,6 +10,10 @@ TODO
 ---
 In priority order:
 
+- [x] Make a pretty interface
+- [x] Implement an interface to receive a single video ID
+- [x] Implement an interface to receive the playlist ID
+- [ ] Process playlist request and divide items into tasks (using a MQ) to process files independently
 - [ ] Implement a way to get the video in mp4 format from YouTube
     - [ ] If not possible, check what other services are doing
 - [ ] Convert the mp4 into a mp3 file
@@ -17,21 +21,18 @@ In priority order:
     - [ ] Goole Play Music (no apparent API, offer option to save mp3 file on local computer?)
     - [ ] Google Drive (check if they have an API)
     - [ ] Dropbox (maybe? check if they have an API)
-- [ ] Implement an interface to receive a single video ID
-- [ ] Implement an interface to receive the playlist ID
-- [ ] Process playlist request and divide items into tasks (using a MQ) to process files independently
-- [ ] Make a pretty interface
+    - [ ] local drive
 - [ ] Implement a way to get the private videos / playlists of users
 
 Technologies used
 ---
 ***TODO*** Check if this is what we need or we need more
 
-- [ ] AppEngine
-    - [ ] Task Queue
+- [x] AppEngine
+    - [x] Task Queue
     - [ ] Managed VM (for the conversion part)
-- [ ] Go
-    - [ ] GorrilaWebToolkit - [http://www.gorillatoolkit.org/](http://www.gorillatoolkit.org/)
+- [x] Go
+    - [x] GorrilaWebToolkit - [http://www.gorillatoolkit.org/](http://www.gorillatoolkit.org/)
 - Google APIs
     - [ ] Drive API
     - [ ] Drive SDK (check difference between the two)

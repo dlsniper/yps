@@ -23,20 +23,27 @@ func init() {
 
 func queueHandler(w http.ResponseWriter, r *http.Request) {
 	c := appengine.NewContext(r)
-	mq := aetq.NewQueue(c, core.UserInputQueue, 60)
+	mq := aetq.NewQueue(c, core.UserInputQueue, 5)
 
 	processChan := make(chan error, 1)
-	go core.ProcessUserInput(&mq, processChan)
 
-	select {
-	case <-time.After(time.Duration(5) * time.Second):
-		{
-			log.Printf("[info] processing tasks took too long")
-		}
-	case resp := <-processChan:
-		{
-			if resp != nil {
-				log.Printf("[error] error while processing user input message: %q", resp)
+	for i := 0; i < 12; i++ {
+		start := time.Now()
+		go core.ProcessUserInput(&mq, processChan)
+
+		select {
+		case <-time.After(time.Duration(5) * time.Second):
+			{
+				log.Printf("[info] processing tasks took too long")
+			}
+		case resp := <-processChan:
+			{
+				if resp != nil {
+					log.Printf("[error] error while processing user input message: %q", resp)
+				}
+
+				// We do want to process stuff every 5 seconds for now
+				time.Sleep(time.Duration(5)*time.Second - time.Since(start))
 			}
 		}
 	}
